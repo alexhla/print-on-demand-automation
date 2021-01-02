@@ -1,7 +1,8 @@
-from config import API_KEY
+# from config import API_KEY
 import requests
 import json
 
+API_KEY = 'mou49qpl-b265-asco:826d-ojy6nbmxzay2'
 URL_BASE = 'https://api.printful.com'
 
 def get_product_types():
