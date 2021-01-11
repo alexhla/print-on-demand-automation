@@ -30,6 +30,5 @@ rdn = RDN(weights='psnr-small')
 sr_img = rdn.predict(lr_img, by_patch_of_size=50)
 img_doubled = Image.fromarray(sr_img)
 
-img_name = IMAGE_NAME[:-4] + '_' +str(max(img_doubled.size)) + IMAGE_NAME[-4:]
-img_path = os.path.join(DEST_FOLDER, img_name)
+img_path = os.path.join(DEST_FOLDER, IMAGE_NAME)
 img_doubled.save(img_path)
