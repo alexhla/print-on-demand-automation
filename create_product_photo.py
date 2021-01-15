@@ -30,11 +30,11 @@ print(f'----- Arguments -----\n{args}\n')
 
 
 # paths
-ORIGINAL_IMAGE_FOLDER = 'img/original/'
-PRODUCT_IMAGE_FOLDER = 'img/product/'
-WATERMARK_IMAGE_PATH = 'img/watermark/watermark.png'
-STYLED_IMAGE_FOLDER = 'img/styled/'
-STYLED2X_IMAGE_FOLDER = 'img/styled2x/'
+ORIGINAL_IMAGE_FOLDER = 'img/inprogress/original/'
+PRODUCT_IMAGE_FOLDER = 'img/inprogress/product/'
+WATERMARK_IMAGE_PATH = 'img/inprogress/watermark/watermark.png'
+STYLED_IMAGE_FOLDER = 'img/inprogress/styled/'
+STYLED2X_IMAGE_FOLDER = 'img/inprogress/styled2x/'
 
 if args['upsize_styled_images']:
 	for filename in os.listdir(STYLED2X_IMAGE_FOLDER):

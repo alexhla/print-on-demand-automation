@@ -8,8 +8,8 @@ PIL.Image.MAX_IMAGE_PIXELS = None
 
 
 # get image filenames and sort them alphabetically
-origin_path = "img/original/"
-destination_path = "img/"
+origin_path = "img/inprogress/original/"
+destination_path = "img/inprogress/"
 files = os.listdir(origin_path)
 files.sort()
 
@@ -22,7 +22,7 @@ for src in files:
 	current_aspect_ratio = width/height if larger_side == "width"  else height/width
 	valid_aspect_ratios = [1.0, 1.25, 1.333333333, 1.4, 1.5, 2.0, 3.0]
 	closest_aspect_ratio = min(valid_aspect_ratios, key=lambda x:abs(x-current_aspect_ratio))
-	# closest_aspect_ratio = 1.333333333
+	closest_aspect_ratio = 1.333333333
 
 	# determine which side to crop
 	if current_aspect_ratio > closest_aspect_ratio:

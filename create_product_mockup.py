@@ -21,9 +21,9 @@ print(f'----- Arguments -----\n{args}\n')
 
 
 # paths
-ORIGINAL_IMAGE_FOLDER = 'img/original/'
-SHOWCASE_FOLDER = 'img/showcase/'
-MOCKUP_FOLDER = 'img/mockup/'
+ORIGINAL_IMAGE_FOLDER = 'img/inprogress/original/'
+SHOWCASE_FOLDER = 'img/inprogress/showcase/'
+MOCKUP_FOLDER = 'img/inprogress/mockup/'
 
 if args['upsize_8x']:
 	for x in range (0,3):
