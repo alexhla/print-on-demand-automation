@@ -10,8 +10,22 @@ from PIL import Image
 ap = argparse.ArgumentParser()
 
 # Add the arguments to the parser
-ap.add_argument('-upsize', '--upsize_styled_images', action='store_true',
-	help='resize all styled images to 2x their current pixel width and height')
+ap.add_argument('-upimg', '--upsize_image', nargs=3, metavar=('ITERATIONS', 'SOURCE_DIRECTORY', 'DESTINATION_DIRECTORY'),
+	help='Upsize images in the SOURCE_DIRECTORY doubling in size for each of the specified ITERATIONS and storing the results in the DESTINATION_DIRECTORY')
+
+ap.add_argument('-cbaimg', '--combine_before_after_images', nargs=3, metavar=('BEFORE_DIRECTORY', 'AFTER_DIRECTORY', 'DESTINATION_DIRECTORY'),
+	help='Combine all images in the BEFORE_DIRECTORY with all similarly named images in the AFTER_DIRECTORY placing them side by side and storing the resulting image in the DESTINATION_DIRECTORY')
+
+ap.add_argument('-abtimg', '--add_banner_to_image', nargs=3, metavar=('BANNER_PATH', 'SOURCE_DIRECTORY', 'DESTINATION_DIRECTORY'),
+	help='Add banner specified by BANNER_PATH to all images in the SOURCE_DIRECTORY storing the results in the DESTINATION_DIRECTORY')
+
+
+# ap.add_argument('-i2t', '--image_to_thumbnail', nargs=3, metavar=('SOURCE_DIRECTORY', 'DESTINATION_DIRECTORY'),
+# 	help='Add banner specified by BANNER_PATH to all images in the SOURCE_DIRECTORY storing the results in the DESTINATION_DIRECTORY')
+
+
+
+
 
 ap.add_argument('-downsize', '--downsize_original_image', nargs=1, metavar=('RESIZE_ORIGINAL'),
 	help='pixel size of preview of original image that is overlayed onto final product photo')
@@ -29,23 +43,97 @@ args = vars(ap.parse_args())
 print(f'----- Arguments -----\n{args}\n')
 
 
-# paths
-ORIGINAL_IMAGE_FOLDER = 'img/inprogress/original/'
-PRODUCT_IMAGE_FOLDER = 'img/inprogress/product/'
-WATERMARK_IMAGE_PATH = 'img/inprogress/watermark/watermark.png'
-STYLED_IMAGE_FOLDER = 'img/inprogress/styled/'
-STYLED2X_IMAGE_FOLDER = 'img/inprogress/styled2x/'
+# if args['image_to_thumbnail']:
+# 	SOURCE_DIRECTORY = args['add_banner_to_image'][4]
+# 	DESTINATION_DIRECTORY = args['add_banner_to_image'][5]
 
-if args['upsize_styled_images']:
-	for filename in os.listdir(STYLED2X_IMAGE_FOLDER):
-		os.remove(os.path.join(STYLED2X_IMAGE_FOLDER, filename))
+
+
+if args['add_banner_to_image']:
+	BANNER_PATH = args['add_banner_to_image'][0]
+	SOURCE_DIRECTORY = args['add_banner_to_image'][1]
+	DESTINATION_DIRECTORY = args['add_banner_to_image'][2]
+
+	for image in os.listdir(SOURCE_DIRECTORY):
+		if image in os.listdir(DESTINATION_DIRECTORY):
+			print(f'Error: Ad on bottom image already exists\n{image}\n')
+			continue
+		im = Image.open(os.path.join(SOURCE_DIRECTORY, image), 'r')
+		banner = Image.open(BANNER_PATH, 'r')
+
+		if im.size[0] > im.size[1]:  # landscape orientation
+			
+			aspect_ratio_of_banner = banner.size[0] / banner.size[1]
+			new_banner_height = int(im.size[0] / aspect_ratio_of_banner)
+			banner = banner.resize((im.size[0], new_banner_height))
+			final_image = Image.new('RGBA', ((im.size[0]),im.size[1] + new_banner_height), (0, 0, 0, 0))
+			final_image.paste(im, (0,0))
+			final_image.paste(banner, (0, im.size[1]))
+
+			print(f'Saving Image with Banner to {os.path.join(DESTINATION_DIRECTORY, image)}')
+			final_image.save(os.path.join(DESTINATION_DIRECTORY, image), format="png")
+
+
+if args['upsize_image']:
+	ITERATIONS = int(args['upsize_image'][0])
+	SOURCE_DIRECTORY = args['upsize_image'][1]
+	DESTINATION_DIRECTORY = args['upsize_image'][2]
 		
-	for filename in os.listdir(STYLED_IMAGE_FOLDER):
-		print(f'resizing styled file {filename}')
-		subprocess.run(['python', 'python2_image_enlarge.py',
-			'--image_name', filename,
-			'--source_folder', STYLED_IMAGE_FOLDER,
-			'--dest_folder', STYLED2X_IMAGE_FOLDER], capture_output=True)
+	for image in os.listdir(SOURCE_DIRECTORY):
+		if image in os.listdir(DESTINATION_DIRECTORY):
+			print(f'Error: upsized image already exists\n{image}\n')
+			continue
+		for iteration in range(0, ITERATIONS):
+			print(f'Upsizing image {image} on iteration {iteration}')
+			subprocess.run(['python', 'python2_image_enlarge.py',
+				'--image_name', image,
+				'--source_folder', SOURCE_DIRECTORY,
+				'--dest_folder', DESTINATION_DIRECTORY], capture_output=True)
+
+
+if args['combine_before_after_images']:
+	BEFORE_DIRECTORY = args['combine_before_after_images'][0]
+	AFTER_DIRECTORY = args['combine_before_after_images'][1]
+	DESTINATION_DIRECTORY = args['combine_before_after_images'][2]
+
+	before_images = os.listdir(BEFORE_DIRECTORY)
+	after_images = os.listdir(AFTER_DIRECTORY)
+
+	print(f'Before Images --- {before_images}\n')
+	print(f'After Images --- {after_images}\n')
+
+	for bfimg in before_images:
+		for afimg in after_images:
+			if afimg in os.listdir(DESTINATION_DIRECTORY):
+				print(f'Error: combined image already exists\n{afimg}\n')
+				continue				
+			if bfimg[:-4] in afimg:
+				print(f'Before Image --- {bfimg}')
+				before = Image.open(os.path.join(BEFORE_DIRECTORY, bfimg), 'r')
+				
+				print(f'After Image ---- {afimg}\n')
+				after = Image.open(os.path.join(AFTER_DIRECTORY, afimg), 'r')
+				
+				before = before.resize(after.size)
+
+				if before.size[0] > before.size[1]:  # landscape orientation
+					final_image = Image.new('RGBA', ((before.size[0]),before.size[1]*2), (0, 0, 0, 0))
+					final_image.paste(before, (0,0))
+					final_image.paste(after, (0, before.size[1]))
+
+				else:  # portrait orientation
+					final_image = Image.new('RGBA', ((before.size[0]*2),before.size[1]), (0, 0, 0, 0))
+					final_image.paste(before, (0,0))
+					final_image.paste(after, (before.size[0], 0))
+
+
+				print(f'Saving Combined Image to {os.path.join(DESTINATION_DIRECTORY, afimg)}')
+				final_image.save(os.path.join(DESTINATION_DIRECTORY, afimg), format="png")
+
+
+
+
+
 
 
 if args['downsize_original_image']:
@@ -112,6 +200,12 @@ if args['place_preview']:
 			x1 = styled_img.shape[1] - preview_image.shape[1]
 			y2 = preview_image.shape[0]
 			x2 = styled_img.shape[1]
+
+		elif placement == 'topmiddle':
+			y1 = 0
+			x1 = int(styled_img.shape[1]/1.83) - (preview_image.shape[1]//2)
+			y2 = preview_image.shape[0]
+			x2 = x1 + preview_image.shape[1]
 
 		elif placement == 'bottomleft':
 			y1 = styled_img.shape[0] - preview_image.shape[0]
