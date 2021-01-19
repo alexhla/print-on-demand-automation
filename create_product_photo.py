@@ -20,9 +20,11 @@ ap.add_argument('-abtimg', '--add_banner_to_image', nargs=3, metavar=('BANNER_PA
 	help='Add banner specified by BANNER_PATH to all images in the SOURCE_DIRECTORY storing the results in the DESTINATION_DIRECTORY')
 
 
-# ap.add_argument('-i2t', '--image_to_thumbnail', nargs=3, metavar=('SOURCE_DIRECTORY', 'DESTINATION_DIRECTORY'),
-# 	help='Add banner specified by BANNER_PATH to all images in the SOURCE_DIRECTORY storing the results in the DESTINATION_DIRECTORY')
+ap.add_argument('-padimg', '--pad_image', nargs=6, metavar=('TOP', 'BOTTOM', 'LEFT', 'RIGHT', 'SOURCE_DIRECTORY', 'DESTINATION_DIRECTORY'),
+	help='Add padding per TOP, BOTTOM, LEFT, RIGHT to all images in the SOURCE_DIRECTORY storing the results in the DESTINATION_DIRECTORY')
 
+# ap.add_argument('-cropimg', '--crop_image', nargs=6, metavar=('TOP', 'BOTTOM', 'LEFT', 'RIGHT', 'SOURCE_DIRECTORY', 'DESTINATION_DIRECTORY'),
+# 	help='Add padding per TOP, BOTTOM, LEFT, RIGHT to all images in the SOURCE_DIRECTORY storing the results in the DESTINATION_DIRECTORY')
 
 
 
@@ -43,9 +45,51 @@ args = vars(ap.parse_args())
 print(f'----- Arguments -----\n{args}\n')
 
 
-# if args['image_to_thumbnail']:
-# 	SOURCE_DIRECTORY = args['add_banner_to_image'][4]
-# 	DESTINATION_DIRECTORY = args['add_banner_to_image'][5]
+# if args['crop_image']:
+# 	TOP = int(args['crop_image'][0])
+# 	BOTTOM = int(args['crop_image'][1])
+# 	LEFT = int(args['crop_image'][2])
+# 	RIGHT = int(args['crop_image'][3])
+# 	SOURCE_DIRECTORY = args['crop_image'][4]
+# 	DESTINATION_DIRECTORY = args['crop_image'][5]
+
+# 	for image in os.listdir(SOURCE_DIRECTORY):
+# 		if image in os.listdir(DESTINATION_DIRECTORY):
+# 			print(f'Error: Cropped image already exists\n{image}\n')
+# 			continue
+# 		im = Image.open(os.path.join(SOURCE_DIRECTORY, image), 'r')
+# 		final_image = im.crop((LEFT, TOP, im.size[0], im.size[1]-BOTTOM))
+
+# 		print(f'Saving Cropped Image to {os.path.join(DESTINATION_DIRECTORY, image)}')
+# 		final_image.save(os.path.join(DESTINATION_DIRECTORY, image), format="png")
+
+
+
+
+if args['pad_image']:
+	TOP = int(args['pad_image'][0])
+	BOTTOM = int(args['pad_image'][1])
+	LEFT = int(args['pad_image'][2])
+	RIGHT = int(args['pad_image'][3])
+	SOURCE_DIRECTORY = args['pad_image'][4]
+	DESTINATION_DIRECTORY = args['pad_image'][5]
+
+	for image in os.listdir(SOURCE_DIRECTORY):
+		if image in os.listdir(DESTINATION_DIRECTORY):
+			print(f'Error: Padded image already exists\n{image}\n')
+			continue
+		im = Image.open(os.path.join(SOURCE_DIRECTORY, image), 'r')
+
+		if im.size[0] > im.size[1]:  # landscape orientation
+			final_image = Image.new('RGBA', (LEFT + im.size[0] + RIGHT, TOP + im.size[1] + BOTTOM), (0, 0, 0, 0))
+			final_image.paste(im, (0 + LEFT, 0 + TOP))
+		else:  # portrait orientation
+			final_image = Image.new('RGBA', (TOP + im.size[0] + BOTTOM, LEFT + im.size[1] + RIGHT), (0, 0, 0, 0))
+			final_image.paste(im, (0 + TOP, 0 + LEFT))
+
+
+		print(f'Saving Image with Padding to {os.path.join(DESTINATION_DIRECTORY, image)}')
+		final_image.save(os.path.join(DESTINATION_DIRECTORY, image), format="png")
 
 
 
