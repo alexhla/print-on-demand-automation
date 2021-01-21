@@ -10,21 +10,20 @@ from PIL import Image
 ap = argparse.ArgumentParser()
 
 # Add the arguments to the parser
-ap.add_argument('-upimg', '--upsize_image', nargs=3, metavar=('ITERATIONS', 'SOURCE_DIRECTORY', 'DESTINATION_DIRECTORY'),
+ap.add_argument('-upsize', '--upsize_images', nargs=3, metavar=('ITERATIONS', 'SOURCE_DIRECTORY', 'DESTINATION_DIRECTORY'),
 	help='Upsize images in the SOURCE_DIRECTORY doubling in size for each of the specified ITERATIONS and storing the results in the DESTINATION_DIRECTORY')
 
-ap.add_argument('-cbaimg', '--combine_before_after_images', nargs=3, metavar=('BEFORE_DIRECTORY', 'AFTER_DIRECTORY', 'DESTINATION_DIRECTORY'),
+ap.add_argument('-combine', '--combine_images', nargs=3, metavar=('BEFORE_DIRECTORY', 'AFTER_DIRECTORY', 'DESTINATION_DIRECTORY'),
 	help='Combine all images in the BEFORE_DIRECTORY with all similarly named images in the AFTER_DIRECTORY placing them side by side and storing the resulting image in the DESTINATION_DIRECTORY')
 
-ap.add_argument('-abtimg', '--add_banner_to_image', nargs=3, metavar=('BANNER_PATH', 'SOURCE_DIRECTORY', 'DESTINATION_DIRECTORY'),
+ap.add_argument('-banner', '--add_banner_to_images', nargs=3, metavar=('BANNER_PATH', 'SOURCE_DIRECTORY', 'DESTINATION_DIRECTORY'),
 	help='Add banner specified by BANNER_PATH to all images in the SOURCE_DIRECTORY storing the results in the DESTINATION_DIRECTORY')
 
-
-ap.add_argument('-padimg', '--pad_image', nargs=6, metavar=('TOP', 'BOTTOM', 'LEFT', 'RIGHT', 'SOURCE_DIRECTORY', 'DESTINATION_DIRECTORY'),
+ap.add_argument('-padding', '--pad_images', nargs=6, metavar=('TOP', 'BOTTOM', 'LEFT', 'RIGHT', 'SOURCE_DIRECTORY', 'DESTINATION_DIRECTORY'),
 	help='Add padding per TOP, BOTTOM, LEFT, RIGHT to all images in the SOURCE_DIRECTORY storing the results in the DESTINATION_DIRECTORY')
 
-# ap.add_argument('-cropimg', '--crop_image', nargs=6, metavar=('TOP', 'BOTTOM', 'LEFT', 'RIGHT', 'SOURCE_DIRECTORY', 'DESTINATION_DIRECTORY'),
-# 	help='Add padding per TOP, BOTTOM, LEFT, RIGHT to all images in the SOURCE_DIRECTORY storing the results in the DESTINATION_DIRECTORY')
+ap.add_argument('-create', '--create_product_images', nargs=2, metavar=('STYLE', 'SUBJECT'),
+	help='')
 
 
 
@@ -45,34 +44,47 @@ args = vars(ap.parse_args())
 print(f'----- Arguments -----\n{args}\n')
 
 
-# if args['crop_image']:
-# 	TOP = int(args['crop_image'][0])
-# 	BOTTOM = int(args['crop_image'][1])
-# 	LEFT = int(args['crop_image'][2])
-# 	RIGHT = int(args['crop_image'][3])
-# 	SOURCE_DIRECTORY = args['crop_image'][4]
-# 	DESTINATION_DIRECTORY = args['crop_image'][5]
+if args['create_product_images']:
+	STYLE = args['create_product_images'][0]
+	SUBJECT = args['create_product_images'][1]
 
-# 	for image in os.listdir(SOURCE_DIRECTORY):
-# 		if image in os.listdir(DESTINATION_DIRECTORY):
-# 			print(f'Error: Cropped image already exists\n{image}\n')
-# 			continue
-# 		im = Image.open(os.path.join(SOURCE_DIRECTORY, image), 'r')
-# 		final_image = im.crop((LEFT, TOP, im.size[0], im.size[1]-BOTTOM))
+	# upsize
+	styled512_path = 'img/squarespace/product-images/'+STYLE+'/'+SUBJECT+'/styled512/'
+	styled1024_path = 'img/squarespace/product-images/'+STYLE+'/'+SUBJECT+'/styled1024/'
+	log = subprocess.run(['python3', 'create_product_photo.py',
+		'-upsize', '1', styled512_path, styled1024_path], capture_output=True)	
+	print(log)
 
-# 		print(f'Saving Cropped Image to {os.path.join(DESTINATION_DIRECTORY, image)}')
-# 		final_image.save(os.path.join(DESTINATION_DIRECTORY, image), format="png")
-
-
+	# combine
+	stock_photos_path = 'img/squarespace/stock-photos'
+	combined_path = 'img/squarespace/product-images/'+STYLE+'/'+SUBJECT+'/combined/'
+	log = subprocess.run(['python3', 'create_product_photo.py',
+		'-combine', stock_photos_path, styled1024_path, combined_path], capture_output=True)	
+	print(log)
 
 
-if args['pad_image']:
-	TOP = int(args['pad_image'][0])
-	BOTTOM = int(args['pad_image'][1])
-	LEFT = int(args['pad_image'][2])
-	RIGHT = int(args['pad_image'][3])
-	SOURCE_DIRECTORY = args['pad_image'][4]
-	DESTINATION_DIRECTORY = args['pad_image'][5]
+	# thumbnail
+	thumbnail_path = 'img/squarespace/product-images/'+STYLE+'/'+SUBJECT+'/thumbnail/'
+	log = subprocess.run(['python3', 'create_product_photo.py',
+		'-padding', '200', '200', '0', '0', combined_path, thumbnail_path], capture_output=True)	
+	print(log)
+
+
+	# banner
+	banner_file = 'img/squarespace/website-assets/how-it-works/how-it-works.png'
+	banner_folder = 'img/squarespace/product-images/'+STYLE+'/'+SUBJECT+'/banner/'
+	log = subprocess.run(['python3', 'create_product_photo.py',
+		'-banner', banner_file, combined_path, banner_folder], capture_output=True)	
+	print(log)
+
+
+if args['pad_images']:
+	TOP = int(args['pad_images'][0])
+	BOTTOM = int(args['pad_images'][1])
+	LEFT = int(args['pad_images'][2])
+	RIGHT = int(args['pad_images'][3])
+	SOURCE_DIRECTORY = args['pad_images'][4]
+	DESTINATION_DIRECTORY = args['pad_images'][5]
 
 	for image in os.listdir(SOURCE_DIRECTORY):
 		if image in os.listdir(DESTINATION_DIRECTORY):
@@ -93,10 +105,10 @@ if args['pad_image']:
 
 
 
-if args['add_banner_to_image']:
-	BANNER_PATH = args['add_banner_to_image'][0]
-	SOURCE_DIRECTORY = args['add_banner_to_image'][1]
-	DESTINATION_DIRECTORY = args['add_banner_to_image'][2]
+if args['add_banner_to_images']:
+	BANNER_PATH = args['add_banner_to_images'][0]
+	SOURCE_DIRECTORY = args['add_banner_to_images'][1]
+	DESTINATION_DIRECTORY = args['add_banner_to_images'][2]
 
 	for image in os.listdir(SOURCE_DIRECTORY):
 		if image in os.listdir(DESTINATION_DIRECTORY):
@@ -118,10 +130,10 @@ if args['add_banner_to_image']:
 			final_image.save(os.path.join(DESTINATION_DIRECTORY, image), format="png")
 
 
-if args['upsize_image']:
-	ITERATIONS = int(args['upsize_image'][0])
-	SOURCE_DIRECTORY = args['upsize_image'][1]
-	DESTINATION_DIRECTORY = args['upsize_image'][2]
+if args['upsize_images']:
+	ITERATIONS = int(args['upsize_images'][0])
+	SOURCE_DIRECTORY = args['upsize_images'][1]
+	DESTINATION_DIRECTORY = args['upsize_images'][2]
 		
 	for image in os.listdir(SOURCE_DIRECTORY):
 		if image in os.listdir(DESTINATION_DIRECTORY):
@@ -135,16 +147,16 @@ if args['upsize_image']:
 				'--dest_folder', DESTINATION_DIRECTORY], capture_output=True)
 
 
-if args['combine_before_after_images']:
-	BEFORE_DIRECTORY = args['combine_before_after_images'][0]
-	AFTER_DIRECTORY = args['combine_before_after_images'][1]
-	DESTINATION_DIRECTORY = args['combine_before_after_images'][2]
+if args['combine_images']:
+	BEFORE_DIRECTORY = args['combine_images'][0]
+	AFTER_DIRECTORY = args['combine_images'][1]
+	DESTINATION_DIRECTORY = args['combine_images'][2]
 
 	before_images = os.listdir(BEFORE_DIRECTORY)
 	after_images = os.listdir(AFTER_DIRECTORY)
 
-	print(f'Before Images --- {before_images}\n')
-	print(f'After Images --- {after_images}\n')
+	# print(f'Before Images --- {before_images}\n')
+	# print(f'After Images --- {after_images}\n')
 
 	for bfimg in before_images:
 		for afimg in after_images:
@@ -173,10 +185,6 @@ if args['combine_before_after_images']:
 
 				print(f'Saving Combined Image to {os.path.join(DESTINATION_DIRECTORY, afimg)}')
 				final_image.save(os.path.join(DESTINATION_DIRECTORY, afimg), format="png")
-
-
-
-
 
 
 
