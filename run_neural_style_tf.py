@@ -6,7 +6,7 @@ import subprocess
 LIB = 'neural_style.py'
 DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 LIB_PATH = os.path.join(DIR_PATH, 'lib/neural-style-tf-master/')
-SKIP_STYLE_COLOR = ['', '']
+SKIP_STYLE_COLOR = ['abstract-mediterranean-landscape.jpg', '']
 SKIP_ORIGINAL_COLOR = ['impressionist-bonnard-a-woman-in-a-room.jpg','']
 
 for content_img in os.listdir(os.path.join(LIB_PATH, 'image_input')):
@@ -24,7 +24,7 @@ for content_img in os.listdir(os.path.join(LIB_PATH, 'image_input')):
 
 		tic = time.time()
 
-		if style not in SKIP_STYLE_COLOR:
+		if style_img not in SKIP_STYLE_COLOR:
 			subprocess.run(['python', os.path.join(LIB_PATH, LIB),
 				'--style_imgs', style_img,
 				'--content_img', content_img,
@@ -34,7 +34,7 @@ for content_img in os.listdir(os.path.join(LIB_PATH, 'image_input')):
 				capture_output=True, cwd=LIB_PATH)
 
 
-		if style not in SKIP_ORIGINAL_COLOR:
+		if style_img not in SKIP_ORIGINAL_COLOR:
 			subprocess.run(['python', os.path.join(LIB_PATH, LIB),
 				'--style_imgs', style_img,
 				'--content_img', content_img,

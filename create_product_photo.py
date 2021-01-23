@@ -12,6 +12,9 @@ from PIL import Image
 ap = argparse.ArgumentParser()
 
 # Add the arguments to the parser
+ap.add_argument('-sbox', '--sandbox', action='store_true',
+	help='Sandbox is for running prototype code and tests')
+
 ap.add_argument('-upsize', '--upsize_images', nargs=3, metavar=('ITERATIONS', 'SOURCE_DIRECTORY', 'destination_folder'),
 	help='Upsize images in the SOURCE_DIRECTORY doubling in size for each of the specified ITERATIONS and storing the results in the destination_folder')
 
@@ -28,13 +31,13 @@ ap.add_argument('-create', '--create_product_images', action='store_true',
 	help='Upsize, create, combine, padding, banner on all images of a certain style and subject')
 
 ap.add_argument('-organize', '--organize_images', action='store_true',
-	help='')
+	help='Organize all new files into their respective style and subject folders')
 
 ap.add_argument('-cntsty', '--count_styled_images', action='store_true',
-	help='')
+	help='Count number of styled images for each style and subject and display results to the terminal')
 
 
-ap.add_argument('-sbox', '--sandbox', action='store_true',
+ap.add_argument('-back_delete_from_combined', '--back_delete_from_combined', nargs=2, metavar=('STYLE', 'SUBJECT'),
 	help='')
 
 
@@ -53,17 +56,67 @@ ap.add_argument('-pw', '--place_watermark', nargs=1, metavar=('PLACE_WATERMARK')
 args = vars(ap.parse_args())
 print(f'----- Arguments -----\n{args}\n')
 
-STYLES = ['abstract', 'cartoon', 'cubist', 'impressionist', 'postimpressionist', 'sketch', 'watercolor']
-SUBJECTS = ['cats', 'couples', 'dogs', 'family', 'self-portraits', 'wedding']
+
+ALL_STYLES = ['abstract', 'cartoon', 'cubist', 'impressionist', 'postimpressionist', 'sketch', 'watercolor']
+ALL_SUBJECTS = ['cats', 'couples', 'dogs', 'family', 'self-portraits', 'wedding']
 
 
 if args['sandbox']:
-	print('hello')
+	print('------- Sandbox --------')
+
+
+if args['back_delete_from_combined']:
+	STYLE = args['back_delete_from_combined'][0]
+	SUBJECT = args['back_delete_from_combined'][1]
+	COMBINED_FOLDER = 'img/squarespace/product-images/'+STYLE+'/'+SUBJECT+'/combined/'
+	
+	files_to_save = {}
+	for filename in os.listdir(COMBINED_FOLDER):
+		files_to_save[filename] = True
+
+	for folder in ['styled512','styled1024','padded','banner']:
+		destination_folder = 'img/squarespace/product-images/'+STYLE+'/'+SUBJECT+'/'+folder+'/'
+		for filename in os.listdir(destination_folder):
+			if filename not in files_to_save:
+				os.remove(os.path.join(destination_folder, filename))
+
+
+if args['place_watermark']:
+	for filename in os.listdir(PRODUCT_IMAGE_FOLDER):
+		watermark_image = Image.open(WATERMARK_IMAGE_PATH, 'r')
+		styled_img = Image.open(os.path.join(PRODUCT_IMAGE_FOLDER, filename), 'r')
+		placement = args['place_watermark'][0]
+
+		if placement == 'topleft':
+			x1 = y1 = 0
+
+		elif placement == 'topright':
+			x1 = styled_img.size[0] - watermark_image.size[0]
+			y1 = 0
+
+		elif placement == 'bottomleft':
+			x1 = 0
+			y1 = styled_img.size[1] - watermark_image.size[1]
+
+		elif placement == 'bottomright':
+			x1 = styled_img.size[0] - watermark_image.size[0]
+			y1 = styled_img.size[1] - watermark_image.size[1]
+
+		else:
+			print('Error: Invalid Watermark Placement')
+			continue
+
+		# print(f'x1, y1 = {x1}, {y1}')
+		text_img = Image.new('RGBA', (styled_img.size[0],styled_img.size[1]), (0, 0, 0, 0))
+		text_img.paste(styled_img, (0,0))
+		text_img.paste(watermark_image, (x1,y1), mask=watermark_image)
+		text_img.save(PRODUCT_IMAGE_FOLDER+filename, format="png")
+
 
 
 if args['count_styled_images']:
-	for style in STYLES:
-			for subject in SUBJECTS:
+	for style in ALL_STYLES:
+			for subject in ALL_SUBJECTS:
 					destination_folder = 'img/squarespace/product-images/'+style+'/'+subject+'/styled512/'
 					print(f'{len(os.listdir(destination_folder))} --- {style} | {subject}')
 
@@ -71,9 +124,9 @@ if args['count_styled_images']:
 if args['organize_images']:
 	SOURCE_FOLDER = 'img/squarespace/product-images/to-do/'
 	for filename in os.listdir(SOURCE_FOLDER):
-		for style in STYLES:
+		for style in ALL_STYLES:
 			if style in filename:
-				for subject in SUBJECTS:
+				for subject in ALL_SUBJECTS:
 					if subject in filename:
 						destination_folder = 'img/squarespace/product-images/'+style+'/'+subject+'/styled512'
 						print(f'Copying image {filename} to {style} | {subject}')
@@ -84,10 +137,9 @@ if args['organize_images']:
 		os.remove(os.path.join(SOURCE_FOLDER, filename))
 
 
-
 if args['create_product_images']:
-		for style in STYLES:
-				for subject in SUBJECTS:
+		for style in ALL_STYLES:
+				for subject in ALL_SUBJECTS:
 
 					print(f'Upsizing --- {style} --- {subject}')
 					styled512_folder = 'img/squarespace/product-images/'+style+'/'+subject+'/styled512/'
@@ -140,10 +192,8 @@ if args['pad_images']:
 			final_image = Image.new('RGBA', (TOP + im.size[0] + BOTTOM, LEFT + im.size[1] + RIGHT), (0, 0, 0, 0))
 			final_image.paste(im, (0 + TOP, 0 + LEFT))
 
-
 		print(f'Saving Image with Padding to {os.path.join(destination_folder, image)}')
 		final_image.save(os.path.join(destination_folder, image), format="png")
-
 
 
 if args['add_banner_to_images']:
@@ -152,9 +202,9 @@ if args['add_banner_to_images']:
 	destination_folder = args['add_banner_to_images'][2]
 
 	for image in os.listdir(SOURCE_DIRECTORY):
-		if image in os.listdir(destination_folder):
-			print(f'Error: Ad on bottom image already exists\n{image}\n')
-			continue
+		# if image in os.listdir(destination_folder):
+		# 	print(f'Error: Ad on bottom image already exists\n{image}\n')
+		# 	continue
 		im = Image.open(os.path.join(SOURCE_DIRECTORY, image), 'r')
 		banner = Image.open(BANNER_PATH, 'r')
 
@@ -226,7 +276,6 @@ if args['combine_images']:
 
 				print(f'Saving Combined Image to {os.path.join(destination_folder, afimg)}')
 				final_image.save(os.path.join(destination_folder, afimg), format="png")
-
 
 
 if args['downsize_original_image']:
@@ -321,35 +370,3 @@ if args['place_preview']:
 		styled_img[y1:y2, x1:x2 ] = preview_image
 		PRODUCT_IMAGE_PATH = os.path.join(PRODUCT_IMAGE_FOLDER, filename)
 		cv2.imwrite(PRODUCT_IMAGE_PATH, styled_img)
-
-
-if args['place_watermark']:
-	for filename in os.listdir(PRODUCT_IMAGE_FOLDER):
-		watermark_image = Image.open(WATERMARK_IMAGE_PATH, 'r')
-		styled_img = Image.open(os.path.join(PRODUCT_IMAGE_FOLDER, filename), 'r')
-		placement = args['place_watermark'][0]
-
-		if placement == 'topleft':
-			x1 = y1 = 0
-
-		elif placement == 'topright':
-			x1 = styled_img.size[0] - watermark_image.size[0]
-			y1 = 0
-
-		elif placement == 'bottomleft':
-			x1 = 0
-			y1 = styled_img.size[1] - watermark_image.size[1]
-
-		elif placement == 'bottomright':
-			x1 = styled_img.size[0] - watermark_image.size[0]
-			y1 = styled_img.size[1] - watermark_image.size[1]
-
-		else:
-			print('Error: Invalid Watermark Placement')
-			continue
-
-		# print(f'x1, y1 = {x1}, {y1}')
-		text_img = Image.new('RGBA', (styled_img.size[0],styled_img.size[1]), (0, 0, 0, 0))
-		text_img.paste(styled_img, (0,0))
-		text_img.paste(watermark_image, (x1,y1), mask=watermark_image)
-		text_img.save(PRODUCT_IMAGE_FOLDER+filename, format="png")
