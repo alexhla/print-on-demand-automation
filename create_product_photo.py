@@ -33,19 +33,25 @@ ap.add_argument('-create', '--create_product_images', action='store_true',
 ap.add_argument('-organize', '--organize_images', action='store_true',
 	help='Organize all new files into their respective style and subject folders')
 
-ap.add_argument('-cntsty', '--count_styled_images', action='store_true',
+ap.add_argument('-count', '--count_styled_images', action='store_true',
 	help='Count number of styled images for each style and subject and display results to the terminal')
+
+ap.add_argument('-compare', '--compare_folders', action='store_true',
+	help='')
 
 
 ap.add_argument('-back_delete_from_combined', '--back_delete_from_combined', nargs=2, metavar=('STYLE', 'SUBJECT'),
 	help='')
 
+ap.add_argument('-border', '--add_border', nargs=5, metavar=('FILE_PATH', 'BORDER_SIZE', 'BORDER_COLOR_RED', 'BORDER_COLOR_GREEN', 'BORDER_COLOR_BLUE'),
+	help='border size of original image that is overlayed onto final product photo')
+
+
+
+
 
 ap.add_argument('-downsize', '--downsize_original_image', nargs=1, metavar=('RESIZE_ORIGINAL'),
 	help='pixel size of preview of original image that is overlayed onto final product photo')
-
-ap.add_argument('-border', '--add_border', nargs=1, metavar=('ADD_BORDER'),
-	help='border size of original image that is overlayed onto final product photo')
 
 ap.add_argument('-pp', '--place_preview', nargs=1, metavar=('PLACE_PREVIEW'),
 	help='where the original image preview is to be overlayed on the final product photo (topleft, topmiddle, topright, bottomleft, bottommiddle, bottom right)')
@@ -56,13 +62,35 @@ ap.add_argument('-pw', '--place_watermark', nargs=1, metavar=('PLACE_WATERMARK')
 args = vars(ap.parse_args())
 print(f'----- Arguments -----\n{args}\n')
 
-
-ALL_STYLES = ['abstract', 'cartoon', 'cubist', 'impressionist', 'postimpressionist', 'sketch', 'watercolor']
+ALL_STYLES = ['abstract', 'illustration', 'cubist', 'impressionist', 'postimpressionist', 'drawing', 'watercolor']
 ALL_SUBJECTS = ['cats', 'couples', 'dogs', 'family', 'self-portraits', 'wedding']
 
 
 if args['sandbox']:
 	print('------- Sandbox --------')
+
+
+if args['add_border']:
+	FILE_PATH = args['add_border'][0]
+	BORDER_SIZE = int(args['add_border'][1])
+	BORDER_COLOR_RED = int(args['add_border'][2])
+	BORDER_COLOR_GREEN = int(args['add_border'][3])
+	BORDER_COLOR_BLUE = int(args['add_border'][4])
+
+	if not os.path.isfile(FILE_PATH):
+		print(f'Error: File Not Found {FILE_PATH}')
+	else:
+		im = cv2.imread(FILE_PATH)
+		top = bottom = left = right = BORDER_SIZE
+
+		print(f'Adding {BORDER_SIZE}px Border to {FILE_PATH}')
+		bordered_image = cv2.copyMakeBorder(im, top=top, bottom=bottom, left=left, right=right,
+									borderType=cv2.BORDER_CONSTANT,
+									value=[BORDER_COLOR_RED, BORDER_COLOR_GREEN, BORDER_COLOR_GREEN])
+
+		BORDERED_FILE_PATH = FILE_PATH[:-4] + '-bordered-' + str(BORDER_SIZE) + '-' + str(BORDER_COLOR_RED) + '-' + str(BORDER_COLOR_GREEN) +  '-'  + str(BORDER_COLOR_BLUE) + FILE_PATH[-4:]
+		cv2.imwrite(BORDERED_FILE_PATH, bordered_image)
+
 
 
 if args['back_delete_from_combined']:
@@ -113,12 +141,25 @@ if args['place_watermark']:
 		text_img.save(PRODUCT_IMAGE_FOLDER+filename, format="png")
 
 
-
-if args['count_styled_images']:
+if args['compare_folders']:
 	for style in ALL_STYLES:
 			for subject in ALL_SUBJECTS:
 					destination_folder = 'img/squarespace/product-images/'+style+'/'+subject+'/styled512/'
-					print(f'{len(os.listdir(destination_folder))} --- {style} | {subject}')
+					style512_files = os.listdir(destination_folder)
+
+					destination_folder = 'img/squarespace/product-images/'+style+'/'+subject+'/combined/'
+					combined_files = os.listdir(destination_folder)
+
+					print(f'{style} | {subject} | {set(style512_files) - set(combined_files)}\n')
+
+
+if args['count_styled_images']:
+	print('styled512 --- combined')
+	for style in ALL_STYLES:
+			for subject in ALL_SUBJECTS:
+					styled512_folder_path = 'img/squarespace/product-images/'+style+'/'+subject+'/styled512/'
+					combined_folder_path = 'img/squarespace/product-images/'+style+'/'+subject+'/combined/'
+					print(f'{len(os.listdir(styled512_folder_path))}\t---\t{len(os.listdir(combined_folder_path))}\t{style} {subject}')		
 
 
 if args['organize_images']:
@@ -202,9 +243,9 @@ if args['add_banner_to_images']:
 	destination_folder = args['add_banner_to_images'][2]
 
 	for image in os.listdir(SOURCE_DIRECTORY):
-		# if image in os.listdir(destination_folder):
-		# 	print(f'Error: Ad on bottom image already exists\n{image}\n')
-		# 	continue
+		if image in os.listdir(destination_folder):
+			print(f'Error: Ad on bottom image already exists\n{image}\n')
+			continue
 		im = Image.open(os.path.join(SOURCE_DIRECTORY, image), 'r')
 		banner = Image.open(BANNER_PATH, 'r')
 
@@ -294,25 +335,6 @@ if args['downsize_original_image']:
 				PREVIEW_FILENAME = filename[:-4] + '_preview' + filename[-4:]
 				PREVIEW_IMAGE_PATH = os.path.join(ORIGINAL_IMAGE_FOLDER, PREVIEW_FILENAME)
 				cv2.imwrite(PREVIEW_IMAGE_PATH, im_preview)
-
-
-if args['add_border']:
-	for filename in os.listdir(ORIGINAL_IMAGE_FOLDER):
-		if 'bordered' not in filename:
-			if 'preview' in filename:
-				im = cv2.imread(os.path.join(ORIGINAL_IMAGE_FOLDER, filename))
-
-				BORDER_SIZE = int(args['add_border'][0])
-				top = bottom = left = right = BORDER_SIZE
-
-				print(f'Adding {BORDER_SIZE}px Border to {filename}')
-				bordered_image = cv2.copyMakeBorder(im, top=top, bottom=bottom, left=left, right=right,
-											borderType=cv2.BORDER_CONSTANT,
-											value=[255,255,255])
-
-				BORDERED_FILENAME = filename[:-4] + '_bordered' + filename[-4:]
-				BORDERED_IMAGE_PATH = os.path.join(ORIGINAL_IMAGE_FOLDER, BORDERED_FILENAME)
-				cv2.imwrite(BORDERED_IMAGE_PATH, bordered_image)
 
 
 if args['place_preview']:
