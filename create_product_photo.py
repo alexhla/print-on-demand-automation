@@ -36,6 +36,9 @@ ap.add_argument('-organize', '--organize_images', action='store_true',
 ap.add_argument('-count', '--count_styled_images', action='store_true',
 	help='Count number of styled images for each style and subject and display results to the terminal')
 
+ap.add_argument('-move', '--move_from_lib_to_product_images', action='store_true',
+	help='')
+
 ap.add_argument('-compare', '--compare_folders', action='store_true',
 	help='')
 
@@ -62,12 +65,29 @@ ap.add_argument('-pw', '--place_watermark', nargs=1, metavar=('PLACE_WATERMARK')
 args = vars(ap.parse_args())
 print(f'----- Arguments -----\n{args}\n')
 
-ALL_STYLES = ['abstract', 'illustration', 'cubist', 'impressionist', 'postimpressionist', 'drawing', 'watercolor']
+ALL_STYLES = ['abstract', 'illustration', 'cubist', 'impressionist', 'postimpressionist', 'sketch', 'watercolor']
 ALL_SUBJECTS = ['cats', 'couples', 'dogs', 'family', 'self-portraits', 'wedding']
 
 
 if args['sandbox']:
 	print('------- Sandbox --------')
+
+
+if args['move_from_lib_to_product_images']:
+	SOURCE_DIR = 'lib/neural-style-tf-master/image_output'
+	DESTINATION_DIR = 'img/squarespace/product-images/to-do'
+
+	print(f'source directory is {SOURCE_DIR} of type {type(SOURCE_DIR)}')
+	for folder in os.listdir(SOURCE_DIR):
+		files = os.listdir(os.path.join(SOURCE_DIR, folder))
+		for file in files:
+			# optional final condition to move file
+			if 'all-famous-art' in file:
+				print(f'\nMoving {file} \nFrom {SOURCE_DIR} \nTo {DESTINATION_DIR}\n')
+				x = os.path.join(SOURCE_DIR, folder, file)
+				y = os.path.join(DESTINATION_DIR, file)
+				os.rename(x, y)
+
 
 
 if args['add_border']:
@@ -100,12 +120,15 @@ if args['back_delete_from_combined']:
 	
 	files_to_save = {}
 	for filename in os.listdir(COMBINED_FOLDER):
+		# print(f'Save: {filename}')
 		files_to_save[filename] = True
 
 	for folder in ['styled512','styled1024','padded','banner']:
 		destination_folder = 'img/squarespace/product-images/'+STYLE+'/'+SUBJECT+'/'+folder+'/'
+		print(f'destination folder is {destination_folder}')
 		for filename in os.listdir(destination_folder):
 			if filename not in files_to_save:
+				print(f'removing {os.path.join(destination_folder, filename)}')
 				os.remove(os.path.join(destination_folder, filename))
 
 

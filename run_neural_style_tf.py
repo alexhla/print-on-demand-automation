@@ -15,6 +15,10 @@ for content_img in os.listdir(os.path.join(LIB_PATH, 'image_input')):
 	for style_img in os.listdir(os.path.join(LIB_PATH, 'styles')):
 		print(f'\n{style_img}')
 
+		if any (style_genre in style_img for style_genre in ['none']):
+			print(f'skipping {style_img}')
+			continue
+
 		output_img =  style_img[:-4] + '-all-famous-art-' +content_img[:-4]
 		original_colors_output_img =  style_img[:-4] + '-original-colors-all-famous-art-' +content_img[:-4]		
 		output_pixel_max = 512
@@ -32,7 +36,7 @@ for content_img in os.listdir(os.path.join(LIB_PATH, 'image_input')):
 			capture_output=True, cwd=LIB_PATH)
 
 
-		if any (word in style_img for word in ['cubist','abstract','postimpressionist','fauvist']):
+		if any (style_genre in style_img for style_genre in ['abstract', 'cubist', 'illustration', 'sketch']):
 				subprocess.run(['python', os.path.join(LIB_PATH, LIB),
 					'--style_imgs', style_img,
 					'--content_img', content_img,

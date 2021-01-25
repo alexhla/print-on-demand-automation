@@ -66,7 +66,7 @@ if args['move_files']:
 		files = os.listdir(os.path.join(SOURCE_DIR, folder))
 		for file in files:
 			# optional final condition to move file
-			if len(file) > 20:
+			if 'all-famous-art' in file:
 				print(f'\nMoving {file} \nFrom {SOURCE_DIR} \nTo {DESTINATION_DIR}\n')
 				x = os.path.join(SOURCE_DIR, folder, file)
 				y = os.path.join(DESTINATION_DIR, file)
