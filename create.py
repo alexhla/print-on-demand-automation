@@ -30,11 +30,19 @@ ap.add_argument('-padding', '--pad_images', nargs=6, metavar=('TOP', 'BOTTOM', '
 ap.add_argument('-create', '--create_product_images', action='store_true',
 	help='Upsize, create, combine, padding, banner on all images of a certain style and subject')
 
+
+ap.add_argument('-check', '--check_files_style_subject', nargs=1, metavar=('SOURCE_DIRECTORY'),
+	help='')
+
+
 ap.add_argument('-organize', '--organize_images', action='store_true',
 	help='Organize all new files into their respective style and subject folders')
 
 ap.add_argument('-count', '--count_styled_images', action='store_true',
 	help='Count number of styled images for each style and subject and display results to the terminal')
+
+
+
 
 ap.add_argument('-move', '--move_from_lib_to_product_images', action='store_true',
 	help='')
@@ -65,12 +73,31 @@ ap.add_argument('-pw', '--place_watermark', nargs=1, metavar=('PLACE_WATERMARK')
 args = vars(ap.parse_args())
 print(f'----- Arguments -----\n{args}\n')
 
-ALL_STYLES = ['abstract', 'illustration', 'cubist', 'impressionist', 'postimpressionist', 'sketch', 'watercolor']
-ALL_SUBJECTS = ['cats', 'couples', 'dogs', 'family', 'self-portraits', 'wedding']
+
+'''
+
+Utility Functions
+
+camelCaseNames are local function names
+
+UPPER_CASE_NAMES are local variables specific to each local function
+
+'''
+
+ALL_STYLES = ['abstract', 'illustration', 'cubist', 'impressionism', 'postimpressionist', 'sketch', 'watercolor']
+ALL_SUBJECTS = ['cats', 'couples', 'dogs', 'family', 'portraits', 'wedding']
+
+
+
 
 
 if args['sandbox']:
 	print('------- Sandbox --------')
+	for style in ALL_STYLES:
+		sp_path = 'img/squarespace/product-images/'+style+'/self-portraits/'
+		new_path = 'img/squarespace/product-images/'+style+'/portraits/'
+		if(os.path.isdir(sp_path)):
+			os.rename(sp_path, new_path)
 
 
 if args['move_from_lib_to_product_images']:
@@ -88,6 +115,10 @@ if args['move_from_lib_to_product_images']:
 				y = os.path.join(DESTINATION_DIR, file)
 				os.rename(x, y)
 
+	# remove image holders folders
+	for folder in os.listdir(SOURCE_DIR):
+		shutil.rmtree(os.path.join(SOURCE_DIR, folder))
+		
 
 
 if args['add_border']:
@@ -132,73 +163,68 @@ if args['back_delete_from_combined']:
 				os.remove(os.path.join(destination_folder, filename))
 
 
-if args['place_watermark']:
-	for filename in os.listdir(PRODUCT_IMAGE_FOLDER):
-		watermark_image = Image.open(WATERMARK_IMAGE_PATH, 'r')
-		styled_img = Image.open(os.path.join(PRODUCT_IMAGE_FOLDER, filename), 'r')
-		placement = args['place_watermark'][0]
-
-		if placement == 'topleft':
-			x1 = y1 = 0
-
-		elif placement == 'topright':
-			x1 = styled_img.size[0] - watermark_image.size[0]
-			y1 = 0
-
-		elif placement == 'bottomleft':
-			x1 = 0
-			y1 = styled_img.size[1] - watermark_image.size[1]
-
-		elif placement == 'bottomright':
-			x1 = styled_img.size[0] - watermark_image.size[0]
-			y1 = styled_img.size[1] - watermark_image.size[1]
-
-		else:
-			print('Error: Invalid Watermark Placement')
-			continue
-
-		# print(f'x1, y1 = {x1}, {y1}')
-		text_img = Image.new('RGBA', (styled_img.size[0],styled_img.size[1]), (0, 0, 0, 0))
-		text_img.paste(styled_img, (0,0))
-		text_img.paste(watermark_image, (x1,y1), mask=watermark_image)
-		text_img.save(PRODUCT_IMAGE_FOLDER+filename, format="png")
-
-
-if args['compare_folders']:
-	for style in ALL_STYLES:
-			for subject in ALL_SUBJECTS:
-					destination_folder = 'img/squarespace/product-images/'+style+'/'+subject+'/styled512/'
-					style512_files = os.listdir(destination_folder)
-
-					destination_folder = 'img/squarespace/product-images/'+style+'/'+subject+'/combined/'
-					combined_files = os.listdir(destination_folder)
-
-					print(f'{style} | {subject} | {set(style512_files) - set(combined_files)}\n')
-
 
 if args['count_styled_images']:
-	print('styled512 --- combined')
+	print('styled512       combined')
 	for style in ALL_STYLES:
-			for subject in ALL_SUBJECTS:
-					styled512_folder_path = 'img/squarespace/product-images/'+style+'/'+subject+'/styled512/'
-					combined_folder_path = 'img/squarespace/product-images/'+style+'/'+subject+'/combined/'
-					print(f'{len(os.listdir(styled512_folder_path))}\t---\t{len(os.listdir(combined_folder_path))}\t{style} {subject}')		
+		print('')
+		for subject in ALL_SUBJECTS:
+			styled512_folder_path = 'img/squarespace/product-images/'+style+'/'+subject+'/styled512/'
+			combined_folder_path = 'img/squarespace/product-images/'+style+'/'+subject+'/combined/'
+			print(f'{len(os.listdir(styled512_folder_path))}\t---\t{len(os.listdir(combined_folder_path))}\t{style} {subject}')		
+
+
+
+if args['check_files_style_subject']:
+	SOURCE_FOLDER = args['check_files_style_subject'][0]
+	count = {}	#'img/squarespace/product-images/'+style+'/'+subject+'/styled512'
+	# ensure all files fall into a category
+	for filename in os.listdir(SOURCE_FOLDER):
+		count[filename] = 0
+		for style in ALL_STYLES:		
+			if style in filename:
+				for subject in ALL_SUBJECTS:
+					if subject in filename:
+						count[filename] += 1
+
+	for k,v in count.items():
+		if v == 0:
+			print(k)
+
+
 
 
 if args['organize_images']:
 	SOURCE_FOLDER = 'img/squarespace/product-images/to-do/'
+	count = {}
+
+	# ensure all files fall into a category
 	for filename in os.listdir(SOURCE_FOLDER):
-		for style in ALL_STYLES:
+		count[filename] = 0
+		for style in ALL_STYLES:		
 			if style in filename:
 				for subject in ALL_SUBJECTS:
 					if subject in filename:
-						destination_folder = 'img/squarespace/product-images/'+style+'/'+subject+'/styled512'
-						print(f'Copying image {filename} to {style} | {subject}')
-						shutil.copy(os.path.join(SOURCE_FOLDER, filename), os.path.join(destination_folder, filename))
+						count[filename] += 1
 
-	# organized files were copied, delete the originals
-	for filename in os.listdir(SOURCE_FOLDER):
-		os.remove(os.path.join(SOURCE_FOLDER, filename))
+	if not any(v == 0 for k,v in count.items()):
+		print('Organizing Files...')
+		for filename in os.listdir(SOURCE_FOLDER):
+			for style in ALL_STYLES:	
+				if style in filename:
+					for subject in ALL_SUBJECTS:
+						if subject in filename:
+							destination_folder = 'img/squarespace/product-images/'+style+'/'+subject+'/styled512'
+							shutil.copy(os.path.join(SOURCE_FOLDER, filename), os.path.join(destination_folder, filename))
+
+		# delete original files
+		for filename in os.listdir(SOURCE_FOLDER):
+			os.remove(os.path.join(SOURCE_FOLDER, filename))
+	else:
+		print('Error: Organzing the Following Files')
+		for k,v in count.items():
+			if v == 0:
+				print(k)
 
 
 if args['create_product_images']:
@@ -340,6 +366,45 @@ if args['combine_images']:
 
 				print(f'Saving Combined Image to {os.path.join(destination_folder, afimg)}')
 				final_image.save(os.path.join(destination_folder, afimg), format="png")
+
+
+
+
+
+if args['place_watermark']:
+	for filename in os.listdir(PRODUCT_IMAGE_FOLDER):
+		watermark_image = Image.open(WATERMARK_IMAGE_PATH, 'r')
+		styled_img = Image.open(os.path.join(PRODUCT_IMAGE_FOLDER, filename), 'r')
+		placement = args['place_watermark'][0]
+
+		if placement == 'topleft':
+			x1 = y1 = 0
+
+		elif placement == 'topright':
+			x1 = styled_img.size[0] - watermark_image.size[0]
+			y1 = 0
+
+		elif placement == 'bottomleft':
+			x1 = 0
+			y1 = styled_img.size[1] - watermark_image.size[1]
+
+		elif placement == 'bottomright':
+			x1 = styled_img.size[0] - watermark_image.size[0]
+			y1 = styled_img.size[1] - watermark_image.size[1]
+
+		else:
+			print('Error: Invalid Watermark Placement')
+			continue
+
+		# print(f'x1, y1 = {x1}, {y1}')
+		text_img = Image.new('RGBA', (styled_img.size[0],styled_img.size[1]), (0, 0, 0, 0))
+		text_img.paste(styled_img, (0,0))
+		text_img.paste(watermark_image, (x1,y1), mask=watermark_image)
+		text_img.save(PRODUCT_IMAGE_FOLDER+filename, format="png")
+
+
+
+
 
 
 if args['downsize_original_image']:
