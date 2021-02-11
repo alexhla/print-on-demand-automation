@@ -1,6 +1,7 @@
 # project config file
 img/
 lib/
+*log_file
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
