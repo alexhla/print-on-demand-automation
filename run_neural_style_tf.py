@@ -23,29 +23,29 @@ for content_img in os.listdir(os.path.join(LIB_PATH, 'image_input')):
 
 		tic = time.time()
 
-		# if 'original-colors-only' in style_img:
-		# 	pass
-		# else:
-		# 	subprocess.run(['python', os.path.join(LIB_PATH, LIB),
-		# 		'--style_imgs', style_img,
-		# 		'--content_img', content_img,
-		# 		'--img_name', output_img,
-		# 		'--max_size', str(output_pixel_max),
-		# 		'--device', '/gpu:0'],
-		# 		capture_output=True, cwd=LIB_PATH)
-
-
-		if 'skip-original' in style_img:
+		if 'original-colors-only' in style_img:
 			pass
-		else:	
+		else:
 			subprocess.run(['python', os.path.join(LIB_PATH, LIB),
 				'--style_imgs', style_img,
 				'--content_img', content_img,
-				'--img_name', original_colors_output_img,
+				'--img_name', output_img,
 				'--max_size', str(output_pixel_max),
-				'--original_colors',
 				'--device', '/gpu:0'],
 				capture_output=True, cwd=LIB_PATH)
+
+
+		# if 'skip-original' in style_img:
+		# 	pass
+		# else:	
+		# 	subprocess.run(['python', os.path.join(LIB_PATH, LIB),
+		# 		'--style_imgs', style_img,
+		# 		'--content_img', content_img,
+		# 		'--img_name', original_colors_output_img,
+		# 		'--max_size', str(output_pixel_max),
+		# 		'--original_colors',
+		# 		'--device', '/gpu:0'],
+		# 		capture_output=True, cwd=LIB_PATH)
 
 		toc = time.time()
 		print(f'Elapsed time is {round((toc - tic)/60, 2)} minutes')
